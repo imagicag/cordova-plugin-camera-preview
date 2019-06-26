@@ -1,11 +1,12 @@
 #include "CameraSessionManager.h"
+#import "AppDelegate.h"
 
 @implementation CameraSessionManager
 
 - (CameraSessionManager *)init {
   if (self = [super init]) {
     // Create the AVCaptureSession
-    self.session = [[AVCaptureSession alloc] init];
+    self.session = ((AppDelegate *)[[UIApplication sharedApplication] delegate]).session;
     self.sessionQueue = dispatch_queue_create("session queue", DISPATCH_QUEUE_SERIAL);
     if ([self.session canSetSessionPreset:AVCaptureSessionPresetPhoto]) {
       [self.session setSessionPreset:AVCaptureSessionPresetPhoto];
@@ -133,6 +134,12 @@
         [self.session addOutput:stillImageOutput];
         [stillImageOutput setOutputSettings:@{AVVideoCodecKey : AVVideoCodecJPEG}];
         self.stillImageOutput = stillImageOutput;
+      } else {
+          for (AVCaptureOutput* output in self.session.outputs) {
+              if ([output isKindOfClass: [AVCaptureStillImageOutput class]]) {
+                  self.stillImageOutput = (AVCaptureStillImageOutput *)(output);
+              }
+          }
       }
 
       AVCaptureVideoDataOutput *dataOutput = [[AVCaptureVideoDataOutput alloc] init];
