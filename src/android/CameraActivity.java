@@ -12,6 +12,8 @@ import android.hardware.Camera;
 import android.hardware.Camera.PictureCallback;
 import android.hardware.Camera.ShutterCallback;
 import android.os.Bundle;
+import android.os.Handler;
+import android.support.annotation.Nullable;
 import android.support.media.ExifInterface;
 import android.util.Base64;
 import android.util.Log;
@@ -124,10 +126,9 @@ public class CameraActivity extends Fragment {
             mainLayout.addView(mPreview);
             mainLayout.setEnabled(false);
 
-            if (toBack == false) {
+            if (!toBack) {
                 this.setupTouchAndBackButton();
             }
-
         }
     }
 
@@ -277,11 +278,7 @@ public class CameraActivity extends Fragment {
             eventListener.onCameraStarted();
         } else {
             mPreview.switchCamera(mCamera, cameraCurrentlyLocked);
-            mCamera.startPreview();
         }
-
-        mCamera.startPreview();
-        Log.d(TAG, "cameraCurrentlyLocked:" + cameraCurrentlyLocked);
 
         final FrameLayout frameContainerLayout = (FrameLayout) view.findViewById(getResources().getIdentifier("frame_container", "id", appResourcesPackage));
 
@@ -314,7 +311,6 @@ public class CameraActivity extends Fragment {
         if (mCamera != null) {
             setDefaultCameraId();
             mPreview.setCamera(null, -1);
-            mCamera.setPreviewCallback(null);
             mCamera.release();
             mCamera = null;
         }
@@ -461,9 +457,9 @@ public class CameraActivity extends Fragment {
                     eventListener.onPictureTaken(encodedImage);
                 } else {
                     String path = getTempFilePath();
-                    FileOutputStream out = new FileOutputStream(path);
-                    out.write(data);
-                    out.close();
+                    try (FileOutputStream out = new FileOutputStream(path)) {
+                        out.write(data);
+                    }
                     eventListener.onPictureTaken(path);
                 }
                 Log.d(TAG, "CameraPreview pictureTakenHandler called back");
@@ -479,7 +475,13 @@ public class CameraActivity extends Fragment {
                 Log.e(TAG, "CameraPreview onPictureTaken general exception", e);
             } finally {
                 canTakePicture = true;
-                mCamera.startPreview();
+                mCamera.stopPreview();
+                try {
+                    mCamera.setPreviewDisplay(null);
+                } catch (IOException e) {
+                    Log.e(TAG, "Failed to remove a preview display", e);
+                }
+                mCamera.release();
             }
         }
     };
@@ -654,7 +656,7 @@ public class CameraActivity extends Fragment {
             }
 
             params.setRotation(mPreview.getDisplayOrientation());
-
+            mCamera.setDisplayOrientation(mPreview.displayOrientation);
             mCamera.setParameters(params);
             try {
                 mCamera.setPreviewDisplay(mPreview.mHolder);
@@ -662,18 +664,24 @@ public class CameraActivity extends Fragment {
                 Log.e(TAG, "Failed to set a preview display", e);
             }
             mCamera.startPreview();
-            mPreview.postDelayed(() -> mCamera.takePicture(shutterCallback, null, jpegPictureCallback), 300L);
+            doAutoFocus(null);
+            mPreview.postDelayed(() -> {
+                mCamera.takePicture(shutterCallback, null, jpegPictureCallback);
+            }, 300L);
+
         } else {
             canTakePicture = true;
         }
     }
 
+    private void doAutoFocus(@Nullable Camera.AutoFocusCallback callback) {
+        new Handler()
+                .postDelayed(() -> mCamera.autoFocus(callback), 200L);
+    }
+
     public void setFocusArea(final int pointX, final int pointY, final Camera.AutoFocusCallback callback) {
         if (mCamera != null) {
             try {
-
-                mCamera.cancelAutoFocus();
-
                 Camera.Parameters parameters = mCamera.getParameters();
 
                 Rect focusRect = calculateTapArea(pointX, pointY, 1f);
@@ -686,7 +694,7 @@ public class CameraActivity extends Fragment {
                 }
 
                 setCameraParameters(parameters);
-                mCamera.autoFocus(callback);
+                doAutoFocus(callback);
             } catch (Exception e) {
                 Log.e(TAG, "Failed to set focus area", e);
                 callback.onAutoFocus(false, mCamera);
