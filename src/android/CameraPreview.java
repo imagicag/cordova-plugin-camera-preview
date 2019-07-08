@@ -1,10 +1,12 @@
 package com.cordovaplugincamerapreview;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.pm.PackageManager;
 import android.app.FragmentManager;
 import android.app.FragmentTransaction;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.hardware.Camera;
 import android.hardware.camera2.CameraAccessException;
@@ -193,7 +195,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean hasCamera(CallbackContext callbackContext) {
-        if (this.hasView(callbackContext) == false) {
+        if (!this.hasView(callbackContext)) {
             return false;
         }
 
@@ -206,7 +208,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getSupportedPictureSizes(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!hasCamera(callbackContext)) {
             return true;
         }
 
@@ -235,7 +237,9 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
         return true;
     }
 
-    private boolean startCamera(int x, int y, int width, int height, String defaultCamera, Boolean tapToTakePicture, Boolean dragEnabled, final Boolean toBack, String alpha, boolean tapFocus, boolean disableExifHeaderStripping, boolean storeToFile, CallbackContext callbackContext) {
+    private boolean startCamera(int x, int y, int width, int height, String defaultCamera, Boolean tapToTakePicture,
+                                Boolean dragEnabled, final Boolean toBack, String alpha, boolean tapFocus,
+                                boolean disableExifHeaderStripping, boolean storeToFile, CallbackContext callbackContext) {
         Log.d(TAG, "start camera action");
         if (fragment != null) {
             callbackContext.error("Camera already started");
@@ -254,32 +258,34 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
         fragment.storeToFile = storeToFile;
         fragment.toBack = toBack;
 
-        DisplayMetrics metrics = cordova.getActivity().getResources().getDisplayMetrics();
+        final Activity activity = cordova.getActivity();
+        Resources resources = activity.getResources();
+        DisplayMetrics metrics = resources.getDisplayMetrics();
         // offset
-        int computedX = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, x, metrics);
-        int computedY = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, y, metrics);
+        int offsetX = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, x, metrics);
+        int offsetY = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, y, metrics);
 
         // size
         int computedWidth = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, width, metrics);
         int computedHeight = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, height, metrics);
 
-        fragment.setRect(computedX, computedY, computedWidth, computedHeight);
+        fragment.setRect(offsetX, offsetY, computedWidth, computedHeight);
 
         startCameraCallbackContext = callbackContext;
 
-        cordova.getActivity().runOnUiThread(new Runnable() {
+        activity.runOnUiThread(new Runnable() {
             @Override
             public void run() {
 
 
                 //create or update the layout params for the container view
-                FrameLayout containerView = (FrameLayout) cordova.getActivity().findViewById(containerViewId);
+                FrameLayout containerView = (FrameLayout) activity.findViewById(containerViewId);
                 if (containerView == null) {
-                    containerView = new FrameLayout(cordova.getActivity().getApplicationContext());
+                    containerView = new FrameLayout(activity.getApplicationContext());
                     containerView.setId(containerViewId);
 
                     FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
-                    cordova.getActivity().addContentView(containerView, containerLayoutParams);
+                    activity.addContentView(containerView, containerLayoutParams);
                 }
                 //display camera bellow the webview
                 if (toBack) {
@@ -297,7 +303,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
                 }
 
                 //add the fragment to the container
-                FragmentManager fragmentManager = cordova.getActivity().getFragmentManager();
+                FragmentManager fragmentManager = activity.getFragmentManager();
                 FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
                 fragmentTransaction.add(containerView.getId(), fragment);
                 fragmentTransaction.commit();
@@ -316,7 +322,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean takeSnapshot(int quality, CallbackContext callbackContext) {
-        if (this.hasView(callbackContext) == false) {
+        if (!this.hasView(callbackContext)) {
             return true;
         }
 
@@ -345,7 +351,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean takePicture(int width, int height, int quality, CallbackContext callbackContext) {
-        if (this.hasView(callbackContext) == false) {
+        if (!this.hasView(callbackContext)) {
             return true;
         }
 
@@ -395,7 +401,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getSupportedColorEffects(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -416,7 +422,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getExposureModes(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -435,7 +441,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getExposureMode(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -458,7 +464,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean setExposureMode(String exposureMode, CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -476,7 +482,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getExposureCompensation(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -493,7 +499,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean setExposureCompensation(int exposureCompensation, CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -520,7 +526,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getExposureCompensationRange(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -546,7 +552,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getSupportedWhiteBalanceModes(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -570,7 +576,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getWhiteBalanceMode(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -597,7 +603,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean setWhiteBalanceMode(String whiteBalanceMode, CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -630,7 +636,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getMaxZoom(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -647,7 +653,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getHorizontalFOV(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -663,7 +669,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
 
 
     private boolean getZoom(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -680,7 +686,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean setZoom(int zoom, CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -700,7 +706,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean setPreviewSize(int width, int height, CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -716,7 +722,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getSupportedFlashModes(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -737,7 +743,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getSupportedFocusModes(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -759,7 +765,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getFocusMode(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -779,7 +785,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean setFocusMode(String focusMode, CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -801,7 +807,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getFlashMode(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 
@@ -866,7 +872,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean showCamera(CallbackContext callbackContext) {
-        if (this.hasView(callbackContext) == false) {
+        if (!this.hasView(callbackContext)) {
             return true;
         }
 
@@ -934,7 +940,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean switchCamera(CallbackContext callbackContext) {
-        if (this.hasView(callbackContext) == false) {
+        if (!this.hasView(callbackContext)) {
             return true;
         }
 
@@ -959,7 +965,7 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
     }
 
     private boolean getCameraCharacteristics(CallbackContext callbackContext) {
-        if (this.hasCamera(callbackContext) == false) {
+        if (!this.hasCamera(callbackContext)) {
             return true;
         }
 

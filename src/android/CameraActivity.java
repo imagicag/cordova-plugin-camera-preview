@@ -3,6 +3,7 @@ package com.cordovaplugincamerapreview;
 import android.app.Activity;
 import android.app.Fragment;
 import android.content.pm.PackageManager;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Matrix;
@@ -16,7 +17,9 @@ import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.media.ExifInterface;
 import android.util.Base64;
+import android.util.DisplayMetrics;
 import android.util.Log;
+import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -423,8 +426,6 @@ public class CameraActivity extends Fragment {
     PictureCallback jpegPictureCallback = new PictureCallback() {
         @Override
         public void onPictureTaken(byte[] data, Camera arg1) {
-            Log.d(TAG, "CameraPreview jpegPictureCallback");
-
             try {
                 if (!disableExifHeaderStripping) {
                     Matrix matrix = new Matrix();
@@ -445,6 +446,17 @@ public class CameraActivity extends Fragment {
                         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                         bitmap = applyMatrix(bitmap, matrix);
 
+
+                        final Activity activity = getActivity();
+                        Resources resources = activity.getResources();
+                        DisplayMetrics metrics = resources.getDisplayMetrics();
+
+                        int offsetTop = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, y, metrics);
+                        int offsetBottom = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PT, y, metrics);
+
+                        int bitmapHeight = bitmap.getHeight() - offsetTop - offsetBottom;
+                        bitmap = Bitmap.createBitmap(bitmap, 0, offsetTop, bitmap.getWidth(), bitmapHeight);
+
                         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                         bitmap.compress(Bitmap.CompressFormat.JPEG, currentQuality, outputStream);
                         data = outputStream.toByteArray();
@@ -453,7 +465,6 @@ public class CameraActivity extends Fragment {
 
                 if (!storeToFile) {
                     String encodedImage = Base64.encodeToString(data, Base64.NO_WRAP);
-
                     eventListener.onPictureTaken(encodedImage);
                 } else {
                     String path = getTempFilePath();
@@ -629,7 +640,7 @@ public class CameraActivity extends Fragment {
         });
     }
 
-    public void takePicture(final int width, final int height, final int quality) {
+    public void takePicture(final int width, int height, final int quality) {
         Log.d(TAG, "CameraPreview takePicture width: " + width + ", height: " + height + ", quality: " + quality);
 
         if (mPreview != null) {
@@ -664,7 +675,6 @@ public class CameraActivity extends Fragment {
                 Log.e(TAG, "Failed to set a preview display", e);
             }
             mCamera.startPreview();
-            doAutoFocus(null);
             mPreview.postDelayed(() -> {
                 mCamera.takePicture(shutterCallback, null, jpegPictureCallback);
             }, 300L);
@@ -672,11 +682,6 @@ public class CameraActivity extends Fragment {
         } else {
             canTakePicture = true;
         }
-    }
-
-    private void doAutoFocus(@Nullable Camera.AutoFocusCallback callback) {
-        new Handler()
-                .postDelayed(() -> mCamera.autoFocus(callback), 200L);
     }
 
     public void setFocusArea(final int pointX, final int pointY, final Camera.AutoFocusCallback callback) {
@@ -700,6 +705,11 @@ public class CameraActivity extends Fragment {
                 callback.onAutoFocus(false, mCamera);
             }
         }
+    }
+
+    private void doAutoFocus(@Nullable Camera.AutoFocusCallback callback) {
+        new Handler()
+                .postDelayed(() -> mCamera.autoFocus(callback), 200L);
     }
 
     private Rect calculateTapArea(float x, float y, float coefficient) {
