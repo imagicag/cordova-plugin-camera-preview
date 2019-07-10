@@ -737,6 +737,19 @@
         CGImageRef resultFinalImage = [self CGImageRotated:finalImage withRadians:radians];
 
         CGImageRelease(finalImage); // release CGImageRef to remove memory leaks
+          
+          CGRect rect = self.cameraRenderController.view.frame;
+          UIImage *finalUIImage = [UIImage imageWithCGImage:resultFinalImage];
+          float scale = finalUIImage.size.height / finalUIImage.size.width;
+          
+          CGRect rect1 = CGRectMake(rect.origin.x + 200,
+                                    rect.origin.y * 5,
+                                    finalUIImage.size.width / scale,
+                                    finalUIImage.size.height * (rect.size.height / self.viewController.view.frame.size.height));
+          
+          CGImageRef imageRef = CGImageCreateWithImageInRect(finalUIImage.CGImage, rect1);
+          //UIImage *result = [UIImage imageWithCGImage:imageRef scale:finalUIImage.scale orientation:finalUIImage.imageOrientation];
+          CGImageRelease(imageRef);
 
         CDVPluginResult *pluginResult;
         if (self.storeToFile) {
@@ -752,7 +765,7 @@
           }
         } else {
           NSMutableArray *params = [[NSMutableArray alloc] init];
-          NSString *base64Image = [self getBase64Image:resultFinalImage withQuality:quality];
+          NSString *base64Image = [self getBase64Image:imageRef withQuality:quality];
           [params addObject:base64Image];
           pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:params];
         }
