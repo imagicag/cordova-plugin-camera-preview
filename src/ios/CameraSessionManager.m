@@ -68,7 +68,7 @@
 }
 
 - (AVCaptureVideoOrientation) getCurrentOrientation {
-  return [self getCurrentOrientation: [[UIApplication sharedApplication] statusBarOrientation]];
+    return AVCaptureVideoOrientationPortrait;
 }
 
 - (AVCaptureVideoOrientation) getCurrentOrientation:(UIInterfaceOrientation)toInterfaceOrientation {
@@ -151,8 +151,16 @@
         [dataOutput setSampleBufferDelegate:self.delegate queue:self.sessionQueue];
 
         [self.session addOutput:dataOutput];
+      } else {
+          for (AVCaptureOutput* output in self.session.outputs) {
+              if ([output isKindOfClass: [AVCaptureVideoDataOutput class]]) {
+                  self.dataOutput = (AVCaptureVideoDataOutput *) output;
+                  [self.dataOutput setAlwaysDiscardsLateVideoFrames:YES];
+                  [self.dataOutput setVideoSettings:[NSDictionary dictionaryWithObject:[NSNumber numberWithInt:kCVPixelFormatType_32BGRA] forKey:(id)kCVPixelBufferPixelFormatTypeKey]];
+                  [self.dataOutput setSampleBufferDelegate:self.delegate queue:self.sessionQueue];
+              }
+          }
       }
-
       [self updateOrientation:[self getCurrentOrientation]];
       self.device = videoDevice;
 

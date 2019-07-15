@@ -70,11 +70,12 @@
   }
 
   self.view.userInteractionEnabled = self.dragEnabled || self.tapToTakePicture || self.tapToFocus;
+
 }
 
 - (void) viewWillAppear:(BOOL)animated {
   [super viewWillAppear:animated];
-
+    self.viewFrame = self.view.frame;
   [[NSNotificationCenter defaultCenter] addObserver:self
                                            selector:@selector(appplicationIsActive:)
                                                name:UIApplicationDidBecomeActiveNotification
@@ -162,18 +163,19 @@
     CVPixelBufferRef pixelBuffer = (CVPixelBufferRef)CMSampleBufferGetImageBuffer(sampleBuffer);
     CIImage *image = [CIImage imageWithCVPixelBuffer:pixelBuffer];
 
+      //self.viewFrame = self.view.frame;
+      CGFloat scaleHeight = self.viewFrame.size.height/image.extent.size.height;
+      CGFloat scaleWidth = self.viewFrame.size.width/image.extent.size.width;
 
-    CGFloat scaleHeight = self.view.frame.size.height/image.extent.size.height;
-    CGFloat scaleWidth = self.view.frame.size.width/image.extent.size.width;
 
     CGFloat scale, x, y;
     if (scaleHeight < scaleWidth) {
       scale = scaleWidth;
       x = 0;
-      y = ((scale * image.extent.size.height) - self.view.frame.size.height ) / 2;
+      y = ((scale * image.extent.size.height) - self.viewFrame.size.height ) / 2;
     } else {
       scale = scaleHeight;
-      x = ((scale * image.extent.size.width) - self.view.frame.size.width )/ 2;
+      x = ((scale * image.extent.size.width) - self.viewFrame.size.width )/ 2;
       y = 0;
     }
 
@@ -191,7 +193,7 @@
 
     // crop
     CIFilter *cropFilter = [CIFilter filterWithName:@"CICrop"];
-    CIVector *cropRect = [CIVector vectorWithX:0 Y:0 Z:self.view.frame.size.width W:self.view.frame.size.height];
+    CIVector *cropRect = [CIVector vectorWithX:0 Y:0 Z:self.viewFrame.size.width W:self.viewFrame.size.height];
     [cropFilter setValue:transformedImage forKey:kCIInputImageKey];
     [cropFilter setValue:cropRect forKey:@"inputRectangle"];
     CIImage *croppedImage = [cropFilter outputImage];
@@ -210,7 +212,7 @@
     } else {
       pointScale = [[UIScreen mainScreen] scale];
     }
-    CGRect dest = CGRectMake(0, 0, self.view.frame.size.width*pointScale, self.view.frame.size.height*pointScale);
+    CGRect dest = CGRectMake(0, 0, self.viewFrame.size.width*pointScale, self.viewFrame.size.height*pointScale);
 
     [self.ciContext drawImage:croppedImage inRect:dest fromRect:[croppedImage extent]];
     [self.context presentRenderbuffer:GL_RENDERBUFFER];
