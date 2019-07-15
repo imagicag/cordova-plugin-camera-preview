@@ -738,8 +738,6 @@
 
         CGImageRelease(finalImage); // release CGImageRef to remove memory leaks
 
-
-
         CDVPluginResult *pluginResult;
         if (self.storeToFile) {
           NSData *data = UIImageJPEGRepresentation([UIImage imageWithCGImage:resultFinalImage], (CGFloat) quality);
@@ -753,22 +751,10 @@
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[[NSURL fileURLWithPath:filePath] absoluteString]];
           }
         } else {
-            CGRect rect = self.cameraRenderController.view.frame;
-            UIImage *finalUIImage = [UIImage imageWithCGImage:resultFinalImage];
-            float scale = finalUIImage.size.height / finalUIImage.size.width;
-
-            CGRect rect1 = CGRectMake(rect.origin.x + 200,
-                                      rect.origin.y * 5,
-                                      finalUIImage.size.width / scale,
-                                      finalUIImage.size.height * (rect.size.height / self.viewController.view.frame.size.height));
-
-            CGImageRef imageRef = CGImageCreateWithImageInRect(finalUIImage.CGImage, rect1);
-
           NSMutableArray *params = [[NSMutableArray alloc] init];
-          NSString *base64Image = [self getBase64Image:imageRef withQuality:quality];
+          NSString *base64Image = [self getBase64Image:resultFinalImage withQuality:quality];
           [params addObject:base64Image];
           pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:params];
-            CGImageRelease(imageRef);
         }
 
         CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
