@@ -284,7 +284,10 @@ public class CameraPreview extends CordovaPlugin implements CameraActivity.Camer
                     containerView = new FrameLayout(activity.getApplicationContext());
                     containerView.setId(containerViewId);
 
-                    FrameLayout.LayoutParams containerLayoutParams = new FrameLayout.LayoutParams(FrameLayout.LayoutParams.MATCH_PARENT, FrameLayout.LayoutParams.MATCH_PARENT);
+                    FrameLayout.LayoutParams containerLayoutParams =
+                            new FrameLayout.LayoutParams(
+                                    FrameLayout.LayoutParams.MATCH_PARENT,
+                                    FrameLayout.LayoutParams.MATCH_PARENT);
                     activity.addContentView(containerView, containerLayoutParams);
                 }
                 //display camera bellow the webview

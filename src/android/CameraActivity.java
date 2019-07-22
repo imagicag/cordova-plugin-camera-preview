@@ -17,9 +17,7 @@ import android.os.Handler;
 import android.support.annotation.Nullable;
 import android.support.media.ExifInterface;
 import android.util.Base64;
-import android.util.DisplayMetrics;
 import android.util.Log;
-import android.util.TypedValue;
 import android.view.GestureDetector;
 import android.view.Gravity;
 import android.view.LayoutInflater;
@@ -119,12 +117,13 @@ public class CameraActivity extends Fragment {
             //set box position and size
             FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(width, height);
             layoutParams.setMargins(x, y, 0, 0);
-            frameContainerLayout = (FrameLayout) view.findViewById(getResources().getIdentifier("frame_container", "id", appResourcesPackage));
+            Resources resources = getResources();
+            frameContainerLayout = view.findViewById(resources.getIdentifier("frame_container", "id", appResourcesPackage));
             frameContainerLayout.setLayoutParams(layoutParams);
 
             //video view
             mPreview = new Preview(getActivity());
-            mainLayout = (FrameLayout) view.findViewById(getResources().getIdentifier("video_view", "id", appResourcesPackage));
+            mainLayout = view.findViewById(resources.getIdentifier("video_view", "id", appResourcesPackage));
             mainLayout.setLayoutParams(new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.MATCH_PARENT));
             mainLayout.addView(mPreview);
             mainLayout.setEnabled(false);
@@ -283,7 +282,7 @@ public class CameraActivity extends Fragment {
             mPreview.switchCamera(mCamera, cameraCurrentlyLocked);
         }
 
-        final FrameLayout frameContainerLayout = (FrameLayout) view.findViewById(getResources().getIdentifier("frame_container", "id", appResourcesPackage));
+        final FrameLayout frameContainerLayout = view.findViewById(getResources().getIdentifier("frame_container", "id", appResourcesPackage));
 
         ViewTreeObserver viewTreeObserver = frameContainerLayout.getViewTreeObserver();
 
@@ -295,7 +294,7 @@ public class CameraActivity extends Fragment {
                     frameContainerLayout.measure(View.MeasureSpec.UNSPECIFIED, View.MeasureSpec.UNSPECIFIED);
                     Activity activity = getActivity();
                     if (isAdded() && activity != null) {
-                        final RelativeLayout frameCamContainerLayout = (RelativeLayout) view.findViewById(getResources().getIdentifier("frame_camera_cont", "id", appResourcesPackage));
+                        final RelativeLayout frameCamContainerLayout = view.findViewById(getResources().getIdentifier("frame_camera_cont", "id", appResourcesPackage));
 
                         FrameLayout.LayoutParams camViewLayout = new FrameLayout.LayoutParams(frameContainerLayout.getWidth(), frameContainerLayout.getHeight());
                         camViewLayout.gravity = Gravity.CENTER_HORIZONTAL | Gravity.CENTER_VERTICAL;
@@ -445,18 +444,6 @@ public class CameraActivity extends Fragment {
                     if (!matrix.isIdentity()) {
                         Bitmap bitmap = BitmapFactory.decodeByteArray(data, 0, data.length);
                         bitmap = applyMatrix(bitmap, matrix);
-
-
-                        final Activity activity = getActivity();
-                        Resources resources = activity.getResources();
-                        DisplayMetrics metrics = resources.getDisplayMetrics();
-
-                        int offsetTop = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, y, metrics);
-                        int offsetBottom = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PT, y, metrics);
-
-                        int bitmapHeight = bitmap.getHeight() - offsetTop - offsetBottom;
-                        bitmap = Bitmap.createBitmap(bitmap, 0, offsetTop, bitmap.getWidth(), bitmapHeight);
-
                         ByteArrayOutputStream outputStream = new ByteArrayOutputStream();
                         bitmap.compress(Bitmap.CompressFormat.JPEG, currentQuality, outputStream);
                         data = outputStream.toByteArray();
