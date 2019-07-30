@@ -36,7 +36,8 @@
     CGFloat alpha = (CGFloat)[command.arguments[8] floatValue];
     BOOL tapToFocus = (BOOL) [command.arguments[9] boolValue];
     BOOL disableExifHeaderStripping = (BOOL) [command.arguments[10] boolValue]; // ignore Android only
-    self.storeToFile = (BOOL) [command.arguments[11] boolValue];
+    self.storeToFile = true;
+    [self cleanPhotoesFolder];
 
     // Create the session manager
     self.sessionManager = [[CameraSessionManager alloc] init];
@@ -90,6 +91,7 @@
         [self.cameraRenderController removeFromParentViewController];
 
         self.cameraRenderController = nil;
+        [self.sessionManager.session removeInput:self.sessionManager.videoDeviceInput];
         self.sessionManager = nil;
 
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK];
@@ -575,11 +577,12 @@
   [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
-- (NSString *)getBase64Image:(CGImageRef)imageRef withQuality:(CGFloat) quality {
+- (NSString *)getBase64Image:(UIImage *)image//(CGImageRef)imageRef
+                 withQuality:(CGFloat) quality {
   NSString *base64Image = nil;
 
   @try {
-    UIImage *image = [UIImage imageWithCGImage:imageRef];
+    //UIImage *image = [UIImage imageWithCGImage:imageRef];
     NSData *imageData = UIImageJPEGRepresentation(image, quality);
     base64Image = [imageData base64EncodedStringWithOptions:0];
   }
@@ -692,74 +695,29 @@
         NSData *imageData = [AVCaptureStillImageOutput jpegStillImageNSDataRepresentation:sampleBuffer];
         UIImage *capturedImage  = [[UIImage alloc] initWithData:imageData];
 
-        CIImage *capturedCImage;
-        //image resize
-
-        if(width > 0 && height > 0){
-          CGFloat scaleHeight = width/capturedImage.size.height;
-          CGFloat scaleWidth = height/capturedImage.size.width;
-          CGFloat scale = scaleHeight > scaleWidth ? scaleWidth : scaleHeight;
-
-          CIFilter *resizeFilter = [CIFilter filterWithName:@"CILanczosScaleTransform"];
-          [resizeFilter setValue:[[CIImage alloc] initWithCGImage:[capturedImage CGImage]] forKey:kCIInputImageKey];
-          [resizeFilter setValue:[NSNumber numberWithFloat:1.0f] forKey:@"inputAspectRatio"];
-          [resizeFilter setValue:[NSNumber numberWithFloat:scale] forKey:@"inputScale"];
-          capturedCImage = [resizeFilter outputImage];
-        }else{
-          capturedCImage = [[CIImage alloc] initWithCGImage:[capturedImage CGImage]];
-        }
-
-        CIImage *imageToFilter;
-        CIImage *finalCImage;
-
-        //fix front mirroring
-        if (self.sessionManager.defaultCamera == AVCaptureDevicePositionFront) {
-          CGAffineTransform matrix = CGAffineTransformTranslate(CGAffineTransformMakeScale(1, -1), 0, capturedCImage.extent.size.height);
-          imageToFilter = [capturedCImage imageByApplyingTransform:matrix];
-        } else {
-          imageToFilter = capturedCImage;
-        }
-
-        CIFilter *filter = [self.sessionManager ciFilter];
-        if (filter != nil) {
-          [self.sessionManager.filterLock lock];
-          [filter setValue:imageToFilter forKey:kCIInputImageKey];
-          finalCImage = [filter outputImage];
-          [self.sessionManager.filterLock unlock];
-        } else {
-          finalCImage = imageToFilter;
-        }
-
-        CGImageRef finalImage = [self.cameraRenderController.ciContext createCGImage:finalCImage fromRect:finalCImage.extent];
-        UIImage *resultImage = [UIImage imageWithCGImage:finalImage];
-
-        double radians = [self radiansFromUIImageOrientation:resultImage.imageOrientation];
-        CGImageRef resultFinalImage = [self CGImageRotated:finalImage withRadians:radians];
-
-        CGImageRelease(finalImage); // release CGImageRef to remove memory leaks
-
         CDVPluginResult *pluginResult;
         if (self.storeToFile) {
-          NSData *data = UIImageJPEGRepresentation([UIImage imageWithCGImage:resultFinalImage], (CGFloat) quality);
-          NSString* filePath = [self getTempFilePath:@"jpg"];
           NSError *err;
 
-          if (![data writeToFile:filePath options:NSAtomicWrite error:&err]) {
+          NSURL *url = [self writeToFile:capturedImage withQuality:quality error:err];
+          if (err == nil) {
+            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:url.absoluteString];
+          } else {
             pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_IO_EXCEPTION messageAsString:[err localizedDescription]];
           }
-          else {
-            pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsString:[[NSURL fileURLWithPath:filePath] absoluteString]];
-          }
+
         } else {
+
           NSMutableArray *params = [[NSMutableArray alloc] init];
-          NSString *base64Image = [self getBase64Image:resultFinalImage withQuality:quality];
+          NSString *base64Image = [self getBase64Image:capturedImage
+                                           withQuality:quality];
           [params addObject:base64Image];
           pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_OK messageAsArray:params];
         }
 
-        CGImageRelease(resultFinalImage); // release CGImageRef to remove memory leaks
-
         [pluginResult setKeepCallbackAsBool:true];
+
+          NSLog(@"Take picture callback send");
         [self.commandDelegate sendPluginResult:pluginResult callbackId:self.onPictureTakenHandlerId];
       }
     }];
@@ -784,6 +742,52 @@
     } while ([fileMgr fileExistsAtPath:filePath]);
 
     return filePath;
+}
+
+- (NSURL*) writeToFile: (UIImage *)image withQuality:(CGFloat)quality error:(NSError *)errorPtr {
+    NSDateFormatter *dateFormatter = [NSDateFormatter new];
+    dateFormatter.dateFormat = @"E-MMM dd yyyy";
+    dateFormatter.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
+    NSString *dateString = [dateFormatter stringFromDate: [NSDate new] ];
+
+    NSString *uuid = [NSUUID new].UUIDString;
+    NSString * imageName = [NSString stringWithFormat:@"%@%@.jpeg", uuid, dateString];
+
+    NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
+    NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
+    NSURL *imageUrl = [photoesURL URLByAppendingPathComponent: imageName];
+
+    NSData *data = UIImageJPEGRepresentation(image,
+                                             (CGFloat) quality);
+
+    if (![NSFileManager.defaultManager fileExistsAtPath:photoesURL.path]){
+        [NSFileManager.defaultManager createDirectoryAtPath:photoesURL.path withIntermediateDirectories:true attributes:nil error:&errorPtr];
+    }
+    if (errorPtr != nil) {
+        return nil;
+    }
+
+    [data writeToFile:imageUrl.path options:NSAtomicWrite error:&errorPtr];
+    if (errorPtr != nil) {
+        return nil;
+    }
+
+    return imageUrl;
+}
+
+- (void)cleanPhotoesFolder {
+    NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
+    NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
+    if ([NSFileManager.defaultManager fileExistsAtPath:photoesURL.path]){
+        NSError *error;
+        for (NSString *file in [NSFileManager.defaultManager contentsOfDirectoryAtPath:photoesURL.path error:&error]) {
+            NSString *path = [photoesURL.path stringByAppendingPathComponent:file];
+            [NSFileManager.defaultManager removeItemAtPath:path error:&error];
+        }
+    }
+
 }
 
 @end
