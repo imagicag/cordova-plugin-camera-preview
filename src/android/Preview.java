@@ -18,6 +18,9 @@ import java.util.List;
 class Preview extends RelativeLayout implements SurfaceHolder.Callback {
 
     private static final String TAG = "CameraPreviewLayout";
+    public static final String TAG1 = "CameraRatio";
+    static final double ASPECT_TOLERANCE = 0.1;
+    private static final double DEFAULT_RATIO = 1.33;
     CustomSurfaceView mSurfaceView;
     SurfaceHolder mHolder;
     Camera.Size mPreviewSize;
@@ -136,6 +139,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
             Log.d(TAG, "before setPreviewSize");
 
             mSupportedPreviewSizes = parameters.getSupportedPreviewSizes();
+            Log.d(TAG1, "switchCamera");
             mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, mSurfaceView.getWidth(), mSurfaceView.getHeight());
             parameters.setPreviewSize(mPreviewSize.width, mPreviewSize.height);
             Log.d(TAG, mPreviewSize.width + " " + mPreviewSize.height);
@@ -156,6 +160,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
         setMeasuredDimension(width, height);
 
         if (mSupportedPreviewSizes != null) {
+            Log.d(TAG1, "Preview onMeasure");
             mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, width, height);
         }
     }
@@ -229,8 +234,8 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
         }
     }
 
-  public void surfaceDestroyed(SurfaceHolder holder) {
-    // Surface will be destroyed when we return, so stop the preview.
+    public void surfaceDestroyed(SurfaceHolder holder) {
+        // Surface will be destroyed when we return, so stop the preview.
 //    try {
 //      if (mCamera != null) {
 //        mCamera.stopPreview();
@@ -238,46 +243,55 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
 //    } catch (Exception exception) {
 //      Log.e(TAG, "Exception caused by surfaceDestroyed()", exception);
 //    }
-  }
-  private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int w, int h) {
-    final double ASPECT_TOLERANCE = 0.1;
-    double targetRatio = (double) w / h;
-    if (displayOrientation == 90 || displayOrientation == 270) {
-      targetRatio = (double) h / w;
     }
 
+    private Camera.Size getOptimalPreviewSize(List<Camera.Size> sizes, int width, int height) {
+        Log.d(TAG1, "--------GET OPTIMAL PREVIEW SIZE-----)");
+        Log.d(TAG, "width: " + width + " height: " + height);
         if (sizes == null) {
             return null;
         }
 
+        double targetRatio = calculateTargetRatio(displayOrientation, width, height);
+        Log.d(TAG, "targetRatio " + targetRatio);
         Camera.Size optimalSize = null;
         double minDiff = Double.MAX_VALUE;
-
-        int targetHeight = h;
 
         // Try to find an size match aspect ratio and size
         for (Camera.Size size : sizes) {
             double ratio = (double) size.width / size.height;
             if (Math.abs(ratio - targetRatio) > ASPECT_TOLERANCE) continue;
-            if (Math.abs(size.height - targetHeight) < minDiff) {
+            if (Math.abs(size.height - height) < minDiff) {
                 optimalSize = size;
-                minDiff = Math.abs(size.height - targetHeight);
+                minDiff = Math.abs(size.height - height);
             }
         }
-
         // Cannot find the one match the aspect ratio, ignore the requirement
         if (optimalSize == null) {
+            Log.d(TAG, "optimalSize == null after search with ASPECT_TOLERANCE");
             minDiff = Double.MAX_VALUE;
             for (Camera.Size size : sizes) {
-                if (Math.abs(size.height - targetHeight) < minDiff) {
+                if (Math.abs(size.height - height) < minDiff) {
                     optimalSize = size;
-                    minDiff = Math.abs(size.height - targetHeight);
+                    minDiff = Math.abs(size.height - height);
                 }
             }
+        } else {
+            Log.d(TAG, "GOT optimal preview size in First Search: width: " + optimalSize.width + " height: " + optimalSize.height);
         }
 
-        Log.d(TAG, "optimal preview size: w: " + optimalSize.width + " h: " + optimalSize.height);
+        double finalRatio = (double) optimalSize.width / optimalSize.height;
+        Log.d(TAG1, "-------- FINAL width: " + optimalSize.width + " height: " + optimalSize.height + " ration " + finalRatio + " ---------");
         return optimalSize;
+    }
+
+    private double calculateTargetRatio(int displayOrientation, int width, int height) {
+        if (width == 0 || height == 0) {
+            return Preview.DEFAULT_RATIO;
+        } else {
+            boolean wasRotated = displayOrientation == 90 || displayOrientation == 270;
+            return (wasRotated ? (double) height / width : (double) width / height);
+        }
     }
 
     @Override
@@ -288,6 +302,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
                 // the preview.
                 mSupportedPreviewSizes = mCamera.getParameters().getSupportedPreviewSizes();
                 if (mSupportedPreviewSizes != null) {
+                    Log.d(TAG1, "! preview surfaceChanged");
                     mPreviewSize = getOptimalPreviewSize(mSupportedPreviewSizes, w, h);
                 }
                 Camera.Parameters parameters = mCamera.getParameters();
