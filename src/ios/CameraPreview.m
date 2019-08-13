@@ -15,7 +15,7 @@
 }
 
 - (void) startCamera:(CDVInvokedUrlCommand*)command {
-
+    NSLog(@"startCamera");
   CDVPluginResult *pluginResult;
 
   if (self.sessionManager != nil) {
@@ -70,8 +70,10 @@
     // Setup session
     self.sessionManager.delegate = self.cameraRenderController;
 
-    [self.sessionManager setupSession:defaultCamera completion:^(BOOL started) {
+      [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(forceStopCamera) name:CDVPluginResetNotification object:nil];
 
+    [self.sessionManager setupSession:defaultCamera completion:^(BOOL started) {
+        NSLog(@"startCamera send callback");
       [self.commandDelegate sendPluginResult:[CDVPluginResult resultWithStatus:CDVCommandStatus_OK] callbackId:command.callbackId];
 
     }];
@@ -80,6 +82,19 @@
     pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Invalid number of parameters"];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
   }
+}
+
+- (void) forceStopCamera {
+    NSLog(@"forceStopCamera");
+    if(self.sessionManager != nil) {
+        [self.cameraRenderController.view removeFromSuperview];
+        [self.cameraRenderController removeFromParentViewController];
+
+        self.cameraRenderController = nil;
+        [self.sessionManager.session removeInput:self.sessionManager.videoDeviceInput];
+        self.sessionManager = nil;
+    }
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
 }
 
 - (void) stopCamera:(CDVInvokedUrlCommand*)command {
@@ -99,7 +114,7 @@
     else {
         pluginResult = [CDVPluginResult resultWithStatus:CDVCommandStatus_ERROR messageAsString:@"Camera not started"];
     }
-
+    [[NSNotificationCenter defaultCenter] removeObserver:self];
     [self.commandDelegate sendPluginResult:pluginResult callbackId:command.callbackId];
 }
 
@@ -440,6 +455,7 @@
 }
 
 - (void) takePicture:(CDVInvokedUrlCommand*)command {
+
   NSLog(@"takePicture");
   CDVPluginResult *pluginResult;
 
@@ -746,7 +762,7 @@
 
 - (NSURL*) writeToFile: (UIImage *)image withQuality:(CGFloat)quality error:(NSError *)errorPtr {
     NSDateFormatter *dateFormatter = [NSDateFormatter new];
-    dateFormatter.dateFormat = @"E-MMM dd yyyy";
+    dateFormatter.dateFormat = @"E-MMM-dd-yyyy";
     dateFormatter.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
     NSString *dateString = [dateFormatter stringFromDate: [NSDate new] ];
 
@@ -755,7 +771,7 @@
 
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
-    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photos"];
     NSURL *imageUrl = [photoesURL URLByAppendingPathComponent: imageName];
 
     NSData *data = UIImageJPEGRepresentation(image,
@@ -779,7 +795,7 @@
 - (void)cleanPhotoesFolder {
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
-    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photos"];
     if ([NSFileManager.defaultManager fileExistsAtPath:photoesURL.path]){
         NSError *error;
         for (NSString *file in [NSFileManager.defaultManager contentsOfDirectoryAtPath:photoesURL.path error:&error]) {
