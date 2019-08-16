@@ -22,6 +22,8 @@ import android.view.ViewGroup;
 import android.view.ViewParent;
 import android.widget.FrameLayout;
 
+import com.bitpay.cordova.qrscanner.QRScanner;
+
 import org.apache.cordova.CallbackContext;
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.PluginResult;
@@ -246,6 +248,9 @@ public class CameraPreview extends CordovaPlugin implements CameraFragment.Camer
                                 Boolean dragEnabled, final Boolean toBack, String alpha, boolean tapFocus,
                                 boolean disableExifHeaderStripping, boolean storeToFile, CallbackContext callbackContext) {
         Log.d(TAG, "START CAMERA ACTION");
+        QRScanner.currentCameraId = defaultCamera.equals("rear")
+                ? Camera.CameraInfo.CAMERA_FACING_BACK
+                : Camera.CameraInfo.CAMERA_FACING_FRONT;
         if (fragment != null) {
             callbackContext.error("Camera already started");
             return true;
@@ -838,8 +843,15 @@ public class CameraPreview extends CordovaPlugin implements CameraFragment.Camer
         Camera camera = fragment.getCamera();
         Camera.Parameters params = camera.getParameters();
 
-        List<String> supportedFlashModes = camera.getParameters().getSupportedFlashModes();
-        if (!supportedFlashModes.contains(flashMode)) {
+        List<String> supportedFlashModes = camera.getParameters().getSupportedFlashModes();// ["off", "auto", "on", "red-eye", "torch"]
+        if (supportedFlashModes == null) {
+            Log.d(TAG, "No supported flash modes. No flash at all!");
+            flashMode = Camera.Parameters.FLASH_MODE_OFF;
+            params.setFlashMode(flashMode);
+            fragment.setCameraParameters(params);
+            callbackContext.success(flashMode);
+            return true;
+        } else if (!supportedFlashModes.contains(flashMode)) {
             callbackContext.error("Flash mode not recognised: " + flashMode);
             return true;
         } else {

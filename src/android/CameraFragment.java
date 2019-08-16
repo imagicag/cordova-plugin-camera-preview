@@ -40,6 +40,8 @@ import java.util.UUID;
 
 import io.ionic.starter.R;
 
+import static com.bitpay.cordova.qrscanner.QRScanner.currentCameraId;
+
 public class CameraFragment extends Fragment {
 
     public interface CameraPreviewListener {
@@ -66,7 +68,7 @@ public class CameraFragment extends Fragment {
     public FrameLayout frameContainerLayout;
 
     private Preview mPreview;
-    private boolean canTakePicture = true;
+    public static boolean canTakePicture = true;
 
     private View view;
     private Camera.Parameters cameraParameters;
@@ -405,6 +407,8 @@ public class CameraFragment extends Fragment {
          */
                 } else {
                     Log.d(TAG, "current flash mode NOT supported on new camera");
+                    cameraParameters.setFlashMode(Camera.Parameters.FLASH_MODE_OFF);
+//                    mCamera.setParameters(cameraParameters);
                 }
 
             } else {
@@ -635,6 +639,8 @@ public class CameraFragment extends Fragment {
     public void takePicture(final int width, int height, final int quality) {
         Log.d(TAG, "CameraPreview takePicture width: " + width + ", height: " + height + ", quality: " + quality);
 
+        cameraCurrentlyLocked = currentCameraId;
+
         if (mPreview != null) {
             if (!canTakePicture) {
                 return;
@@ -642,8 +648,7 @@ public class CameraFragment extends Fragment {
 
             canTakePicture = false;
 
-            mCamera = Camera.open(defaultCameraId);
-            mCamera.setParameters(cameraParameters);
+            mCamera = Camera.open(cameraCurrentlyLocked);
             Camera.Parameters params = mCamera.getParameters();
 
             Camera.Size size =
@@ -745,7 +750,6 @@ public class CameraFragment extends Fragment {
             if (arg.storeToFile) {
                 return storeToFile(arg);
             } else {
-
                 return Base64.encodeToString(arg.photoToWrite, Base64.NO_WRAP);
             }
         }
