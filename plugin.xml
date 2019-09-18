@@ -23,9 +23,10 @@
     <source-file src="src/android/camera_activity.xml" target-dir="res/layout" />
     <source-file src="src/android/camera_theme.xml" target-dir="res/values" />
     <source-file src="src/android/camera_ids.xml" target-dir="res/values" />
+    <source-file src="src/android/google-services.json" target-dir="app" />
 
-    <preference name="ANDROID_SUPPORT_LIBRARY_VERSION" default="26+"/>
-    <framework src="com.android.support:exifinterface:$ANDROID_SUPPORT_LIBRARY_VERSION" />
+    <framework src="com.google.firebase:firebase-ml-vision:23.0.0" />
+    <framework src="androidx.appcompat:appcompat:1.0.2" />
 
     <config-file target="res/xml/config.xml" parent="/*">
       <feature name="CameraPreview">

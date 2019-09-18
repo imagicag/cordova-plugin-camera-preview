@@ -15,14 +15,14 @@ import org.apache.cordova.LOG;
 import java.io.IOException;
 import java.util.List;
 
-class Preview extends RelativeLayout implements SurfaceHolder.Callback {
+public class Preview extends RelativeLayout implements SurfaceHolder.Callback {
 
     private static final String TAG = "CameraPreviewLayout";
     public static final String TAG1 = "CameraRatio";
     static final double ASPECT_TOLERANCE = 0.1;
     private static final double DEFAULT_RATIO = 1.33;
     CustomSurfaceView mSurfaceView;
-    SurfaceHolder mHolder;
+    public SurfaceHolder mHolder;
     Camera.Size mPreviewSize;
     List<Camera.Size> mSupportedPreviewSizes;
     Camera mCamera;
@@ -31,7 +31,7 @@ class Preview extends RelativeLayout implements SurfaceHolder.Callback {
     int facing = Camera.CameraInfo.CAMERA_FACING_BACK;
 
 
-    Preview(Context context) {
+    public Preview(Context context) {
         super(context);
 
         mSurfaceView = new CustomSurfaceView(context);

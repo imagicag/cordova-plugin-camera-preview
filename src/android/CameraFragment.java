@@ -14,8 +14,6 @@ import android.hardware.Camera.ShutterCallback;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import android.support.annotation.Nullable;
-import android.support.media.ExifInterface;
 import android.util.Base64;
 import android.util.Log;
 import android.view.GestureDetector;
@@ -28,6 +26,11 @@ import android.view.ViewTreeObserver;
 import android.widget.FrameLayout;
 import android.widget.RelativeLayout;
 
+import androidx.annotation.Nullable;
+import androidx.exifinterface.media.ExifInterface;
+
+import com.bitpay.cordova.qrscanner.CommonData;
+
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -39,8 +42,6 @@ import java.util.List;
 import java.util.UUID;
 
 import io.ionic.starter.R;
-
-import static com.bitpay.cordova.qrscanner.QRScanner.currentCameraId;
 
 public class CameraFragment extends Fragment {
 
@@ -68,7 +69,7 @@ public class CameraFragment extends Fragment {
     public FrameLayout frameContainerLayout;
 
     private Preview mPreview;
-    public static boolean canTakePicture = true;
+//    public static boolean canTakePicture = true;
 
     private View view;
     private Camera.Parameters cameraParameters;
@@ -163,7 +164,7 @@ public class CameraFragment extends Fragment {
             } catch (Exception e) {
                 Log.e(TAG, "CameraPreview onPictureTaken general exception", e);
             } finally {
-                canTakePicture = true;
+                CommonData.getInstance().setCanTakePicture(true);
                 mCamera.stopPreview();
                 try {
                     mCamera.setPreviewDisplay(null);
@@ -639,14 +640,14 @@ public class CameraFragment extends Fragment {
     public void takePicture(final int width, int height, final int quality) {
         Log.d(TAG, "CameraPreview takePicture width: " + width + ", height: " + height + ", quality: " + quality);
 
-        cameraCurrentlyLocked = currentCameraId;
+        cameraCurrentlyLocked = CommonData.getInstance().currentCameraId;
 
         if (mPreview != null) {
-            if (!canTakePicture) {
+            if (!CommonData.getInstance().isCanTakePicture()) {
                 return;
             }
 
-            canTakePicture = false;
+            CommonData.getInstance().setCanTakePicture(false);
 
             mCamera = Camera.open(cameraCurrentlyLocked);
             Camera.Parameters params = mCamera.getParameters();
@@ -678,7 +679,7 @@ public class CameraFragment extends Fragment {
             }, 300L);
 
         } else {
-            canTakePicture = true;
+            CommonData.getInstance().setCanTakePicture(true);
         }
     }
 
