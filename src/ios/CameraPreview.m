@@ -807,7 +807,7 @@
 
 - (NSURL*) writeToFile: (UIImage *)image withQuality:(CGFloat)quality error:(NSError *)errorPtr {
     NSDateFormatter *dateFormatter = [NSDateFormatter new];
-    dateFormatter.dateFormat = @"E-MMM dd yyyy";
+    dateFormatter.dateFormat = @"E-MMM-dd-yyyy";
     dateFormatter.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
     NSString *dateString = [dateFormatter stringFromDate: [NSDate new] ];
 
@@ -816,7 +816,7 @@
 
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
-    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photos"];
     NSURL *imageUrl = [photoesURL URLByAppendingPathComponent: imageName];
 
     NSData *data = UIImageJPEGRepresentation(image,
