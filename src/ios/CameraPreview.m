@@ -812,7 +812,7 @@
     NSString *dateString = [dateFormatter stringFromDate: [NSDate new] ];
 
     NSString *uuid = [NSUUID new].UUIDString;
-    NSString * imageName = [NSString stringWithFormat:@"%@%@.jpeg", uuid];
+    NSString * imageName = [NSString stringWithFormat:@"%@.jpeg", uuid];
 
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
