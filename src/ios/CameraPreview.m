@@ -817,7 +817,7 @@
 
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
-    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photos"];
     NSURL *imageUrl = [photoesURL URLByAppendingPathComponent: imageName];
 
     NSData *data = UIImageJPEGRepresentation(image,
@@ -841,7 +841,7 @@
 - (void)cleanPhotoesFolder {
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
-    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photos"];
     if ([NSFileManager.defaultManager fileExistsAtPath:photoesURL.path]){
         NSError *error;
         for (NSString *file in [NSFileManager.defaultManager contentsOfDirectoryAtPath:photoesURL.path error:&error]) {
