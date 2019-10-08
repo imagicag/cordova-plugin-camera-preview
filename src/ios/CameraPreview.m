@@ -742,9 +742,10 @@
             CDVPluginResult *pluginResult;
             NSURL *url = nil;
 
-            NSMutableArray <NSString*>*coords = [NSMutableArray new];
+            NSMutableArray <NSArray*>*coords = [NSMutableArray new];
             for (int i = 0; i<[points count]; i++) {
-                NSString *a = [NSString stringWithFormat:@"Point(%f,%f)", points[i].CGPointValue.x, points[i].CGPointValue.y];
+                NSArray *a =  @[[NSString stringWithFormat:@"%f",points[i].CGPointValue.x],
+                                [NSString stringWithFormat:@"%f",points[i].CGPointValue.y]];
                 [coords addObject: a];
             }
             if (self.storeToFile) {
@@ -807,16 +808,16 @@
 
 - (NSURL*) writeToFile: (UIImage *)image withQuality:(CGFloat)quality error:(NSError *)errorPtr {
     NSDateFormatter *dateFormatter = [NSDateFormatter new];
-    dateFormatter.dateFormat = @"E-MMM-dd-yyyy";
+    dateFormatter.dateFormat = @"E-MMM dd yyyy";
     dateFormatter.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
     NSString *dateString = [dateFormatter stringFromDate: [NSDate new] ];
 
     NSString *uuid = [NSUUID new].UUIDString;
-    NSString * imageName = [NSString stringWithFormat:@"%@.jpeg", uuid];
+    NSString * imageName = [NSString stringWithFormat:@"%@%@.jpeg", uuid, dateString];
 
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
-    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photos"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
     NSURL *imageUrl = [photoesURL URLByAppendingPathComponent: imageName];
 
     NSData *data = UIImageJPEGRepresentation(image,
@@ -840,7 +841,7 @@
 - (void)cleanPhotoesFolder {
     NSURL* libraryURL = [NSFileManager.defaultManager URLsForDirectory:NSLibraryDirectory inDomains:NSUserDomainMask][0];
     NSURL *cachesURL = [libraryURL URLByAppendingPathComponent: @"Caches"];
-    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photos"];
+    NSURL *photoesURL = [cachesURL URLByAppendingPathComponent: @"Photoes"];
     if ([NSFileManager.defaultManager fileExistsAtPath:photoesURL.path]){
         NSError *error;
         for (NSString *file in [NSFileManager.defaultManager contentsOfDirectoryAtPath:photoesURL.path error:&error]) {
