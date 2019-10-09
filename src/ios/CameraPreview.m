@@ -808,7 +808,7 @@
 
 - (NSURL*) writeToFile: (UIImage *)image withQuality:(CGFloat)quality error:(NSError *)errorPtr {
     NSDateFormatter *dateFormatter = [NSDateFormatter new];
-    dateFormatter.dateFormat = @"E-MMM dd yyyy";
+    dateFormatter.dateFormat = @"E-MMM-dd-yyyy";
     dateFormatter.timeZone = [NSTimeZone timeZoneForSecondsFromGMT:0];
     NSString *dateString = [dateFormatter stringFromDate: [NSDate new] ];
 
