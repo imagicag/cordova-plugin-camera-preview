@@ -21,9 +21,10 @@
     <source-file src="src/android/Preview.java" target-dir="src/com/cordovaplugincamerapreview" />
     <source-file src="src/android/TapGestureDetector.java" target-dir="src/com/cordovaplugincamerapreview" />
     <source-file src="src/android/camera_activity.xml" target-dir="res/layout" />
+    <source-file src="src/android/live_preview.xml" target-dir="res/layout" />
+    <source-file src="src/android/progress.xml" target-dir="res/layout" />
     <source-file src="src/android/camera_theme.xml" target-dir="res/values" />
     <source-file src="src/android/camera_ids.xml" target-dir="res/values" />
-    <source-file src="src/android/google-services.json" target-dir="app" />
 
     <framework src="com.google.firebase:firebase-ml-vision:23.0.0" />
     <framework src="androidx.appcompat:appcompat:1.0.2" />
