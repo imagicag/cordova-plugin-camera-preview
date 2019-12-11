@@ -41,7 +41,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.UUID;
 
-import io.ionic.starter.R;
+import ch.imagic.imsmobile.R;
 
 public class CameraFragment extends Fragment {
 
